@@ -1,0 +1,549 @@
+---
+title: "Golf stats"
+author: '712538'
+date: "05 September 2017"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+##Anthro summary
+```{r anthropometrics}
+#loading and exploring csv
+anthro <- read.csv("C:\\Users\\Siobhan\\Desktop\\Master1.csv", sep=";")
+
+#loading packages
+library(tidyr)
+library(plyr)
+library(dplyr)
+library(ggplot2)
+
+#age:test for normality, summarise
+shapiro.test(anthro$Age) 
+
+#visual left: repeat above
+shapiro.test(anthro$Vis.left) 
+
+#visual right: repeat above
+shapiro.test(anthro$Vis.right) 
+
+#height as above
+shapiro.test(anthro$Height)
+sd(anthro$Height)
+
+#weight as above
+shapiro.test(anthro$Weight)
+sd(anthro$Weight)
+
+#arm length left as above
+shapiro.test(anthro$arm.l)
+sd(anthro$arm.l)
+
+#arm length right as above
+shapiro.test(anthro$arm.r)
+sd(anthro$arm.r)
+
+#knuckle-floor left as above
+shapiro.test(anthro$kf.l)
+sd(anthro$kf.l)
+
+#knuckle-floor right as above
+shapiro.test(anthro$kf.r)
+sd(anthro$kf.r)
+
+#creating average skin folds: biceps
+anthro1 <- anthro %>% rowwise() %>% mutate(Avgbic=mean(c(Bic1, Bic2, Bic3), na.rm=T))
+
+#creating average skin folds: triceps
+anthro2 <- anthro1 %>% rowwise() %>% mutate(Avgtric=mean(c(Tric1, Tric2, Tric3), na.rm=T))
+
+#creating average skin folds: biceps
+anthro3 <- anthro2 %>% rowwise() %>% mutate(Avgsup=mean(c(Suprail1, Suprail2, Suprail3), na.rm=T))
+
+#creating average skin folds: biceps
+anthro4 <- anthro3 %>% rowwise() %>% mutate(Avgsub=mean(c(Subscap1, Subscap2, Subscap3), na.rm=T))
+
+#summing average skinfolds
+anthro5 <- anthro4 %>% rowwise() %>% mutate(SKFsum=Avgbic + Avgtric + Avgsup + Avgsub)
+
+#log of sum
+anthro6 <- anthro5 %>% rowwise() %>% mutate(SKFlog=log10(SKFsum))
+
+#sum times 0.0631
+anthro7 <- anthro6 %>% rowwise() %>% mutate(mult=0.0631*SKFlog)
+
+#minused from 1.1631 (predicted body density)
+anthro8 <- anthro7 %>% rowwise() %>% mutate(pbd=1.1631-mult)
+
+#495 divided
+anthro9 <- anthro8 %>% rowwise() %>% mutate(div=495/pbd)
+
+#body fat %
+anthro10 <- anthro9 %>% rowwise() %>% mutate(BFP=div - 450)
+
+#body fat %: check for normality
+shapiro.test(anthro10$BFP)
+mean(anthro10$BFP)
+sd(anthro10$BFP)
+
+#Q1: check for normality
+shapiro.test(anthro$Q1)
+
+#Q2: as above
+shapiro.test(anthro$Q2)
+
+#Q3: as above
+shapiro.test(anthro$Q3)
+sd(anthro$Q3)
+
+#Q4: as above
+shapiro.test(anthro$Q4)
+sd(anthro$Q4)
+
+#Q5 - change to numeric
+anthro11 <- anthro10 %>% rowwise() %>% mutate(Q5num=as.numeric(Q5, na.rm=TRUE))
+shapiro.test(anthro11$Q5num)
+
+```
+
+
+##Cognitive Stuff
+```{r cognitive}
+#loading and exploring csv
+stroop <- read.csv("C:\\Users\\Siobhan\\Desktop\\Cognitive.csv", sep=";")
+
+#calculating inverse efficiency score
+stroop1 <- stroop %>% rowwise() %>% mutate(corrfrac=X.correct/100)
+stroop2 <- stroop1 %>% rowwise() %>% mutate(ies=meanrt/corrfrac)
+
+#normality?
+shapiro.test(stroop2$ies)
+shapiro.test(stroop2$meanrt)
+sd(stroop2$meanrt)
+shapiro.test(stroop2$X.correct)
+
+```
+
+##Co-ordination data
+```{r coord}
+#loading and exploring csv
+coord <- read.csv("C:\\Users\\Siobhan\\Desktop\\Co-ords.csv", sep=";")
+
+#calculating inverse efficiency score
+coord1 <- coord %>% rowwise() %>% mutate(correct=100-X.error)
+coord2 <- coord1 %>% rowwise() %>% mutate(corr=correct/100)
+coord3 <- coord2 %>% rowwise() %>% mutate(c_ies=totaltime/corr)
+
+#normality?
+shapiro.test(coord3$c_ies)
+shapiro.test(coord3$corr)
+shapiro.test(coord3$totaltime)
+
+```
+
+
+##Kinematic data
+```{r kinematics}
+#loading and exploring csv
+biomecha <- read.csv("C:\\Users\\Siobhan\\Desktop\\Kinematics.data.csv", sep=";")
+
+#Calculating means
+biomech1 <- biomecha %>% rowwise() %>% mutate(L.BSdur=mean(c(L9.Bsduration, L10.Bsduration)), na.rm=T)
+biomech2 <- biomech1 %>% rowwise() %>% mutate(L.DSdur=mean(c(L9.Dsduration, L10.Dsduration)),na.rm=T)
+biomech3 <- biomech2 %>% rowwise() %>% mutate(L.FTdur=mean(c(L9.Ftduration, L10.Ftduration)), na.rm=T)
+biomech4 <- biomech3 %>% rowwise() %>% mutate(L.BSdist=mean(c(L9.Bsdistance, L10.Bsdistance)), na.rm=T)
+biomech5 <- biomech4 %>% rowwise() %>% mutate(L.DSdist=mean(c(L9.Dsdistance, L10.Dsdistance)), na.rm=T)
+biomech6 <- biomech5 %>% rowwise() %>% mutate(L.FTdist=mean(c(L9.Ftdistance, L10.Ftdistance)), na.rm=T)
+biomech7 <- biomech6 %>% rowwise() %>% mutate(L.stance=mean(c(L9.stance, L10.stance)), na.rm=T)
+biomech8 <- biomech7 %>% rowwise() %>% mutate(L.head=mean(c(L9.headball, L10.headball)),na.rm=T)
+biomech9 <- biomech8 %>% rowwise() %>% mutate(L.club=mean(c(L9.clubhead, L10.clubhead)), na.rm=T)
+biomech10 <- biomech9 %>% rowwise() %>% mutate(S.BSdur=mean(c(S9.Bsduration, S10.Bsduration)), na.rm=T)
+biomech11 <- biomech10 %>% rowwise() %>% mutate(S.DSdur=mean(c(S9.Dsduration, S10.Dsduration)), na.rm=T)
+biomech12 <- biomech11 %>% rowwise() %>% mutate(S.FTdur=mean(c(S9.Ftduration, S10.Ftduration)), na.rm=T)
+biomech13 <- biomech12 %>% rowwise() %>% mutate(S.BSdist=mean(c(S9.Bsdistance, S10.Bsdistance)), na.rm=T)
+biomech14 <- biomech13 %>% rowwise() %>% mutate(S.DSdist=mean(c(S9.Dsdistance, S10.Dsdistance)), na.rm=T)
+biomech15 <- biomech14 %>% rowwise() %>% mutate(S.FTdist=mean(c(S9.Ftdistance, S10.Ftdistance)), na.rm=T)
+biomech16 <- biomech15 %>% rowwise() %>% mutate(S.stance=mean(c(S9.stance, S10.stance)), na.rm=T)
+biomech17 <- biomech16 %>% rowwise() %>% mutate(S.head=mean(c(S9.headball, S10.headball)), na.rm=T)
+biomech18 <- biomech17 %>% rowwise() %>% mutate(S.club=mean(c(S9.clubhead, S10.clubhead)), na.rm=T)
+
+#calculating deviation angle
+biomech19 <- biomech18 %>% rowwise() %>% mutate(L9.dev=abs(90-L9.clubhead), na.rm=T)
+biomech20 <- biomech19 %>% rowwise() %>% mutate(L10.dev=abs(90-L10.clubhead), na.rm=T)
+biomech21 <- biomech20 %>% rowwise() %>% mutate(S9.dev=abs(90-S9.clubhead), na.rm=T)
+biomech22 <- biomech21 %>% rowwise() %>% mutate(S10.dev=abs(90-S10.clubhead), na.rm=T)
+biomech23 <- biomech22 %>% rowwise() %>% mutate(S.dev=mean(c(S9.dev, S10.dev)), na.rm=T)
+biomech24 <- biomech23 %>% rowwise() %>% mutate(L.dev=mean(c(L9.dev, L10.dev)), na.rm=T)
+
+#Calculating stroke length ratios
+biomech25 <- biomech24 %>% rowwise() %>% mutate(long9SLR=L9.Ftdistance/L9.Dsdistance)
+biomech26 <- biomech25 %>% rowwise() %>% mutate(long10SLR=L10.Ftdistance/L10.Dsdistance)
+biomech27 <- biomech26 %>% rowwise() %>% mutate(short9SLR=S9.Ftdistance/S9.Dsdistance)
+biomech28 <- biomech27 %>% rowwise() %>% mutate(short10SLR=S10.Ftdistance/S10.Dsdistance)
+biomech29 <- biomech28 %>% rowwise() %>% mutate(L.SLR=mean(c(long9SLR, long10SLR)), na.rm=T)
+biomech30 <- biomech29 %>% rowwise() %>% mutate(S.SLR=mean(c(short9SLR, short10SLR)), na.rm=T)
+biomech31 <- biomech30 %>% rowwise() %>% mutate(L.acc=mean(c(accL9, accL10)), na.rm=T)
+biomech <- biomech31 %>% rowwise() %>% mutate(S.acc=mean(c(accS9, accS10)), na.rm=T)
+
+#normality
+shapiro.test(biomech$L.BSdur)
+sd(biomech$L.BSdur)
+shapiro.test(biomech$L.DSdur)
+sd(biomech$L.DSdur)
+shapiro.test(biomech$L.FTdur)
+sd(biomech$L.FTdur)
+shapiro.test(biomech$L.BSdist)
+sd(biomech$L.BSdist, na.rm=TRUE)
+shapiro.test(biomech$L.DSdist)
+sd(biomech$L.DSdist)
+shapiro.test(biomech$L.FTdist)
+shapiro.test(biomech$L.stance)
+sd(biomech$L.stance, na.rm=TRUE)
+shapiro.test(biomech$L.head)
+sd(biomech$L.head, na.rm=TRUE)
+shapiro.test(biomech$L.club)
+sd(biomech$L.club, na.rm=TRUE)
+shapiro.test(biomech$L.dev)
+sd(biomech$L.dev, na.rm=TRUE)
+shapiro.test(biomech$S.BSdur)
+sd(biomech$S.BSdur)
+shapiro.test(biomech$S.DSdur)
+sd(biomech$S.DSdur)
+shapiro.test(biomech$S.FTdur)
+sd(biomech$S.FTdur)
+shapiro.test(biomech$S.BSdist)
+sd(biomech$S.BSdist, na.rm=TRUE)
+shapiro.test(biomech$S.DSdist)
+sd(biomech$S.DSdist, na.rm=TRUE)
+shapiro.test(biomech$S.FTdist)
+shapiro.test(biomech$S.stance)
+sd(biomech$S.stance, na.rm=TRUE)
+shapiro.test(biomech$S.head)
+sd(biomech$S.head, na.rm=TRUE)
+shapiro.test(biomech$S.club)
+sd(biomech$S.club, na.rm=TRUE)
+shapiro.test(biomech$S.dev)
+sd(biomech$S.dev, na.rm=TRUE)
+shapiro.test(biomech$L.SLR)
+shapiro.test(biomech$S.SLR)
+shapiro.test(biomech$L.acc)
+sd(biomech$L.acc, na.rm=TRUE)
+shapiro.test(biomech$S.acc)
+
+```
+
+
+##HRV data
+```{r hrv}
+hrva <- read.csv("C:\\Users\\Siobhan\\Desktop\\HRV.measures2.csv", sep=";")
+
+#Calculating means
+hrv1 <- hrva %>% rowwise() %>% mutate(L.SDNN=mean(c(long9SDNN, long10SDNN)), na.rm=T)
+hrv2 <- hrv1 %>% rowwise() %>% mutate(L.RMSSD=mean(c(long9RMSSD, long10RMSSD)), na.rm=T)
+hrv3 <- hrv2 %>% rowwise() %>% mutate(L.LF=mean(c(long9LF, long10LF)), na.rm=T)
+hrv4 <- hrv3 %>% rowwise() %>% mutate(L.HF=mean(c(long9HF, long10HF)), na.rm=T)
+hrv5 <- hrv4 %>% rowwise() %>% mutate(L.LF.HF=mean(c(long9LF.HF, long10LF.HF)), na.rm=T)
+hrv6 <- hrv5 %>% rowwise() %>% mutate(S.SDNN=mean(c(short9SDNN, short10SDNN)), na.rm=T)
+hrv7 <- hrv6 %>% rowwise() %>% mutate(S.RMSSD=mean(c(short9RMSSD, short10RMSSD)), na.rm=T)
+hrv8 <- hrv7 %>% rowwise() %>% mutate(S.LF=mean(c(short9LF, short10LF)), na.rm=T)
+hrv9 <- hrv8 %>% rowwise() %>% mutate(S.HF=mean(c(short9HF, short10HF)), na.rm=T)
+hrv10 <- hrv9 %>% rowwise() %>% mutate(S.LF.HF=mean(c(short9LF.HF, short10LF.HF)), na.rm=T)
+hrv11 <- hrv10 %>% rowwise() %>% mutate(L.HR=mean(c(long9HR, long10HR)), na.rm=T)
+hrv12 <- hrv11 %>% rowwise() %>% mutate(S.HR=mean(c(short9HR, short10HR)), na.rm=T)
+
+#heart rate changes
+hrv13 <- hrv12 %>% rowwise() %>% mutate(L.changeHR=L.HR-baseHR, na.rm=T)
+hrv <- hrv13 %>% rowwise() %>% mutate(S.changeHR=S.HR-baseHR, na.rm=T)
+
+#normality
+shapiro.test(hrv$L.SDNN)
+sd(hrv$L.SDNN)
+shapiro.test(hrv$L.RMSSD)
+shapiro.test(hrv$L.LF)
+shapiro.test(hrv$L.HF)
+shapiro.test(hrv$L.LF.HF)
+shapiro.test(hrv$L.HR)
+sd(hrv$L.HR)
+shapiro.test(hrv$L.changeHR)
+sd(hrv$L.changeHR)
+shapiro.test(hrv$S.SDNN)
+sd(hrv$S.SDNN, na.rm=TRUE)
+shapiro.test(hrv$S.RMSSD)
+shapiro.test(hrv$S.LF)
+shapiro.test(hrv$S.HF)
+shapiro.test(hrv$S.LF.HF)
+shapiro.test(hrv$S.HR)
+sd(hrv$S.HR)
+sd(hrv$S.HR, na.rm=TRUE)
+shapiro.test(hrv$S.changeHR)
+sd(hrv$S.changeHR, na.rm=TRUE)
+shapiro.test(hrv$baseHR)
+sd(hrv$baseHR, na.rm=TRUE)
+shapiro.test(hrv$baseSDNN)
+sd(hrv$baseSDNN, na.rm=TRUE)
+shapiro.test(hrv$baseRMSSD)
+shapiro.test(hrv$baseLF)
+shapiro.test(hrv$baseHF)
+shapiro.test(hrv$baseLF.HF)
+
+```
+
+
+##Putt accuracy data
+```{r accuracy}
+#loading csv
+putts <- read.csv("C:\\Users\\Siobhan\\Desktop\\Accuracy.csv", sep=";")
+puttsub <- read.csv("C:\\Users\\Siobhan\\Desktop\\Accuracy2a.csv", sep=";")
+
+#computing averages
+putts1 <- putts %>% rowwise() %>% mutate(Lstop=mean(c(L9stop, L10stop), na.rm=T))
+putts2 <- putts1 %>% rowwise() %>% mutate(Sstop=mean(c(S9stop, S10stop), na.rm=T))
+putts3 <- putts2 %>% rowwise() %>% mutate(Lbest=mean(c(L9best, L10best), na.rm=T))
+putts4 <- putts3 %>% rowwise() %>% mutate(Sbest=mean(c(S9best, S10best), na.rm=T))
+
+shapiro.test(putts4$Lstop)
+shapiro.test(putts4$Sstop)
+
+```
+
+
+##Analysing Putt accuracy data
+```{r putts}
+acc <- read.csv("C:\\Users\\Siobhan\\Desktop\\ANOVA.csv", sep=";")
+acc1 <- acc %>% rowwise() %>% mutate(Distance=mean(c(Dist.9, Dist.10), na.rm=T))
+head(acc1)
+wilcox.test(Distance ~ Putt.length, data=acc1)
+
+```
+
+
+##Correlations
+```{r correlations}
+#data frame of accuracy and anthro stuff
+total1 <- merge(putts4, anthro11, by="Subject")
+total2 <- merge(total1, stroop2, by="Subject")
+total3 <- merge(total2, coord3, by="Subject")
+total <- merge(total3, hrv, by="Subject")
+biosub <- merge(puttsub, biomech, by="Subject")
+summary(total)
+summary(biosub)
+
+#Age
+cor.test( ~ Age + Sstop, total, method = "spearman")
+cor.test( ~ Age + Lstop, total, method = "spearman")
+
+#Vis.left
+cor.test( ~ Vis.left + Sstop, total, method = "spearman")
+cor.test( ~ Vis.left + Lstop, total, method = "spearman")
+
+#Vis.right
+cor.test( ~ Vis.right + Sstop, total, method = "spearman")
+cor.test( ~ Vis.right + Lstop, total, method = "spearman")
+
+#Height
+cor.test( ~ Height + Sstop, total, method = "pearson")
+cor.test( ~ Height + Lstop, total, method = "pearson")
+
+#Weight
+cor.test( ~ Weight + Sstop, total, method = "pearson")
+cor.test( ~ Weight + Lstop, total, method = "pearson")
+
+#Arm length left
+cor.test( ~ arm.l + Sstop, total, method = "pearson")
+cor.test( ~ arm.l + Lstop, total, method = "pearson")
+
+#Arm length right
+cor.test( ~ arm.r + Sstop, total, method = "pearson")
+cor.test( ~ arm.r + Lstop, total, method = "pearson")
+
+#knuckle-floor left
+cor.test( ~ kf.l + Sstop, total, method = "pearson")
+cor.test( ~ kf.l + Lstop, total, method = "pearson")
+
+#knuckle-floor right
+cor.test( ~ kf.r + Sstop, total, method = "pearson")
+cor.test( ~ kf.r + Lstop, total, method = "pearson")
+
+#Body fat percentage
+cor.test( ~ BFP + Sstop, total, method = "pearson")
+cor.test( ~ BFP + Lstop, total, method = "pearson")
+
+#Question 1
+cor.test( ~ Q1 + Sstop, total, method = "spearman")
+cor.test( ~ Q1 + Lstop, total, method = "spearman")
+
+#Question 2
+cor.test( ~ Q2 + Sstop, total, method = "spearman")
+cor.test( ~ Q2 + Lstop, total, method = "spearman")
+
+#Question 3
+cor.test( ~ Q3 + Sstop, total, method = "pearson")
+cor.test( ~ Q3 + Lstop, total, method = "pearson")
+
+#Question 4
+cor.test( ~ Q4 + Sstop, total, method = "pearson")
+cor.test( ~ Q4 + Lstop, total, method = "pearson")
+
+#Question 5
+cor.test( ~ Q5num + Sstop, total, method = "spearman")
+cor.test( ~ Q5num + Lstop, total, method = "spearman")
+
+#Cognitive
+cor.test( ~ ies + Sstop, total, method = "spearman")
+cor.test( ~ ies + Lstop, total, method = "spearman")
+
+cor.test( ~ meanrt + Sstop, total, method = "pearson")
+cor.test( ~ meanrt + Lstop, total, method = "pearson")
+
+cor.test( ~ X.correct + Sstop, total, method = "spearman")
+cor.test( ~ X.correct + Lstop, total, method = "spearman")
+
+#Co-ordination
+cor.test( ~ c_ies + Sstop, total, method = "spearman")
+cor.test( ~ c_ies + Lstop, total, method = "spearman")
+
+cor.test( ~ corr + Sstop, total, method = "spearman")
+cor.test( ~ corr + Lstop, total, method = "spearman")
+
+cor.test( ~ totaltime + Sstop, total, method = "spearman")
+cor.test( ~ totaltime + Lstop, total, method = "spearman")
+
+#Long 9 
+cor.test( ~ L9.Bsduration + L9stop, biosub, method = "pearson")
+cor.test( ~ L9.Dsduration + L9stop, biosub, method = "pearson")
+cor.test( ~ L9.Ftduration + L9stop, biosub, method = "pearson")
+cor.test( ~ L9.Bsdistance + L9stop, biosub, method = "pearson")
+cor.test( ~ L9.Dsdistance + L9stop, biosub, method = "pearson")
+cor.test( ~ L9.Ftdistance + L9stop, biosub, method = "spearman")
+cor.test( ~ L9.stance + L9stop, biosub, method = "pearson")
+cor.test( ~ L9.headball + L9stop, biosub, method = "pearson")
+cor.test( ~ L9.clubhead + L9stop, biosub, method = "pearson")
+cor.test( ~ L9.dev + L9stop, biosub, method = "pearson")
+
+#Long 10 
+cor.test( ~ L10.Bsduration + L10stop, biosub, method = "pearson")
+cor.test( ~ L10.Dsduration + L10stop, biosub, method = "pearson")
+cor.test( ~ L10.Ftduration + L10stop, biosub, method = "pearson")
+cor.test( ~ L10.Bsdistance + L10stop, biosub, method = "pearson")
+cor.test( ~ L10.Dsdistance + L10stop, biosub, method = "pearson")
+cor.test( ~ L10.Ftdistance + L10stop, biosub, method = "spearman")
+cor.test( ~ L10.stance + L10stop, biosub, method = "pearson")
+cor.test( ~ L10.headball + L10stop, biosub, method = "pearson")
+cor.test( ~ L10.clubhead + L10stop, biosub, method = "pearson")
+cor.test( ~ L10.dev + L10stop, biosub, method = "pearson")
+
+#Short 9
+cor.test( ~ S9.Bsduration + S9stop, biosub, method = "pearson")
+cor.test( ~ S9.Dsduration + S9stop, biosub, method = "pearson")
+cor.test( ~ S9.Ftduration + S9stop, biosub, method = "pearson")
+cor.test( ~ S9.Bsdistance + S9stop, biosub, method = "spearman")
+cor.test( ~ S9.Dsdistance + S9stop, biosub, method = "pearson")
+cor.test( ~ S9.Ftdistance + S9stop, biosub, method = "spearman")
+cor.test( ~ S9.stance + S9stop, biosub, method = "pearson")
+cor.test( ~ S9.headball + S9stop, biosub, method = "pearson")
+cor.test( ~ S9.clubhead + S9stop, biosub, method = "pearson")
+cor.test( ~ S9.dev + S9stop, biosub, method = "pearson")
+
+#Short 10 
+cor.test( ~ S10.Bsduration + S10stop, biosub, method = "pearson")
+cor.test( ~ S10.Dsduration + S10stop, biosub, method = "pearson")
+cor.test( ~ S10.Ftduration + S10stop, biosub, method = "pearson")
+cor.test( ~ S10.Bsdistance + S10stop, biosub, method = "spearman")
+cor.test( ~ S10.Dsdistance + S10stop, biosub, method = "pearson")
+cor.test( ~ S10.Ftdistance + S10stop, biosub, method = "spearman")
+cor.test( ~ S10.stance + S10stop, biosub, method = "pearson")
+cor.test( ~ S10.headball + S10stop, biosub, method = "pearson")
+cor.test( ~ S10.clubhead + S10stop, biosub, method = "pearson")
+cor.test( ~ S10.dev + S10stop, biosub, method = "pearson")
+
+#Long HRV
+cor.test( ~ long9SDNN + L9stop, total, method = "spearman")
+cor.test( ~ long10SDNN + L10stop, total, method = "spearman")
+cor.test( ~ long9RMSSD + L9stop, total, method = "spearman")
+cor.test( ~ long10RMSSD + L10stop, total, method = "spearman")
+cor.test( ~ long9LF + L9stop, total, method = "spearman")
+cor.test( ~ long10LF + L10stop, total, method = "spearman")
+cor.test( ~ long9HF + L9stop, total, method = "spearman")
+cor.test( ~ long10HF + L10stop, total, method = "spearman")
+cor.test( ~ long9LF.HF + L9stop, total, method = "spearman")
+cor.test( ~ long10LF.HF + L10stop, total, method = "spearman")
+cor.test( ~ long9HR + L9stop, total, method = "pearson")
+cor.test( ~ long10HR + L10stop, total, method = "pearson")
+
+#Short HRV
+cor.test( ~ short9SDNN + S9stop, total, method = "spearman")
+cor.test( ~ short10SDNN + S10stop, total, method = "spearman")
+cor.test( ~ short9RMSSD + S9stop, total, method = "spearman")
+cor.test( ~ short10RMSSD + S10stop, total, method = "spearman")
+cor.test( ~ short9LF + S9stop, total, method = "spearman")
+cor.test( ~ short10LF + S10stop, total, method = "spearman")
+cor.test( ~ short9HF + S9stop, total, method = "spearman")
+cor.test( ~ short10HF + S10stop, total, method = "spearman")
+cor.test( ~ short9LF.HF + S9stop, total, method = "spearman")
+cor.test( ~ short10LF.HF + S10stop, total, method = "spearman")
+cor.test( ~ short9HR + S9stop, total, method = "pearson")
+cor.test( ~ short10HR + S10stop, total, method = "pearson")
+
+#Baseline HRV
+cor.test( ~ baseHR + Sstop, total, method = "pearson")
+cor.test( ~ baseHR + Lstop, total, method = "pearson")
+cor.test( ~ baseSDNN + Sstop, total, method = "pearson")
+cor.test( ~ baseSDNN + Lstop, total, method = "pearson")
+cor.test( ~ baseRMSSD + Sstop, total, method = "spearman")
+cor.test( ~ baseRMSSD + Lstop, total, method = "spearman")
+cor.test( ~ baseLF + Sstop, total, method = "spearman")
+cor.test( ~ baseLF + Lstop, total, method = "spearman")
+cor.test( ~ baseHF + Sstop, total, method = "spearman")
+cor.test( ~ baseHF + Lstop, total, method = "spearman")
+cor.test( ~ baseLF.HF + Sstop, total, method = "spearman")
+cor.test( ~ baseLF.HF + Lstop, total, method = "spearman")
+
+#Stroke-length ratios
+cor.test( ~ long9SLR + L9stop, biosub, method="spearman")
+cor.test( ~ long10SLR + L10stop, biosub, method="pearson")
+cor.test( ~ short9SLR + S9stop, biosub, method="spearman")
+cor.test( ~ short10SLR + S10stop, biosub, method="spearman")
+
+#Accelerations
+cor.test( ~ accL9 + L9stop, biosub, method="pearson")
+cor.test( ~ accL10 + L10stop, biosub, method="pearson")
+cor.test( ~ accS9 + S9stop, biosub, method="spearman")
+cor.test( ~ accS10 + S10stop, biosub, method="spearman")
+
+#SLR vs acc?
+cor.test( ~ long9SLR + accL9, biosub, method="spearman")
+cor.test( ~ long10SLR + accL10, biosub, method="spearman")
+cor.test( ~ short9SLR + accS9, biosub, method="spearman")
+cor.test( ~ short10SLR + accS10, biosub, method="spearman")
+
+```
+
+
+##Eye dominance
+```{r eye_dom}
+#anova for eye-dominance
+anova(lm(Lstop ~ Dom, total))
+anova(lm(Sstop ~ Dom, total))
+
+```
+
+
+##Plots
+```{r figures}
+theme_set(theme_grey(base_size=18))
+box <- ggplot(acc1, aes(Putt.length, Distance))
+box+geom_boxplot()+xlab("Putt Type")+ylab("Final distance from target (mm)")+ggtitle("Error distributions for long and short putts")
+
+sdnn <- ggplot(total, aes(long9SDNN, L9stop))
+sdnn+geom_point()+geom_smooth(method="lm")+xlab("SDNN (ms)")+ylab("Final distance from target(mm)")+ggtitle("SDNN vs error on Long putt 9")
+
+ds <- ggplot(biosub, aes(S10.Dsdistance, S10stop))
+ds+geom_point()+geom_smooth(method="lm")+xlab("Downswing length (mm)")+ylab("Final distance from target (mm)")+ggtitle("Downswing length vs error on Short putt 10")
+
+ht <- ggplot(total, aes(Height, Lstop))
+ht+geom_point()+geom_smooth(method="lm")+xlab("Height of subject (cm)")+ylab("Mean final distance from target (mm)")+ggtitle("Subject height vs mean error on the long putt")
+
+```
